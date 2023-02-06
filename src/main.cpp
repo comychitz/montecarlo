@@ -6,23 +6,21 @@
 #include <sstream>
 #include <iostream>
 #include <locale>
+#include <vector>
+#include <cmath>
 
 using namespace std;
 
 /**
  * Simple Monte Carlo simulation for testing expectancy of a system over a
- * certain number of trades.  This simulation is structured in days, where one
- * or more trades are executed each day. Risk per day is divided by the number
- * of trades per day if you want to test distributing the risk equally among X
- * number of trades each day.
+ * certain number of trades.  
  */
 const int STARTING_CAPITAL = 100000;
-const float PERCENT_OF_CAPITAL_RISKED_PER_TRADE = 4;
-const int NUM_TRADES_PER_DAY = 1;
-const int TOTAL_NUM_DAYS = 250;
+const float PERCENT_OF_CAPITAL_RISKED_PER_TRADE = 2;
+const int TOTAL_NUM_TRADES = 250;
 const long TOTAL_RUNS = 100000;
 
-const float PERCENT_WIN = 55.0;
+const float PERCENT_WIN = 50.0;
 const float WIN_AMOUNT = 1.2;
 const float LOSS_AMOUNT = 1;
 
@@ -36,12 +34,21 @@ string formatWithCommas(T value)
     return ss.str();
 }
 
+long calcVariance(long avg, vector<long> nums) 
+{
+  long variance = 0;
+  for (long i = 0; i < nums.size(); i++) {
+    variance += pow((avg - nums.at(i)), 2);
+  }
+  return variance / nums.size();
+}
+
 
 int main() {
-  srand(time(NULL));
 
   long numRuns = 0;
   long totalCapital = 0;
+  vector<long> resultingCapitals;
   long numAccountsBlownOut = 0;
   long maxResultingCapital = 0;
   long minResultingCapital = STARTING_CAPITAL;
@@ -49,24 +56,21 @@ int main() {
 
   while (numRuns++ < TOTAL_RUNS)
   {
+    srand(numRuns);
     int numTrades = 0;
     float currentCapital = STARTING_CAPITAL;
 
-    while (numTrades++ < TOTAL_NUM_DAYS)
+    while (numTrades++ < TOTAL_NUM_TRADES)
     {
-      float risk = (currentCapital * (PERCENT_OF_CAPITAL_RISKED_PER_TRADE / 100)) / NUM_TRADES_PER_DAY;
-
-      for (int i = 0; i < NUM_TRADES_PER_DAY; i++)
+      float risk = (currentCapital * (PERCENT_OF_CAPITAL_RISKED_PER_TRADE / 100));
+      bool win = rand() % 100 < PERCENT_WIN;
+      if (win)
       {
-        bool win = rand() % 100 < PERCENT_WIN;
-        if (win)
-        {
-          currentCapital += risk * WIN_AMOUNT;
-        }
-        else
-        {
-          currentCapital -= risk * LOSS_AMOUNT;
-        }
+        currentCapital += risk * WIN_AMOUNT;
+      }
+      else
+      {
+        currentCapital -= risk * LOSS_AMOUNT;
       }
 
       if (currentCapital <= 0)
@@ -75,6 +79,9 @@ int main() {
         break;
       }
     }
+
+    resultingCapitals.push_back(currentCapital);
+
     if (currentCapital < STARTING_CAPITAL / 2) {
       numAccountsLessThan50PercentOfStartingCapital++;
     }
@@ -87,19 +94,24 @@ int main() {
     totalCapital += currentCapital;
   }
 
+  long avgResultingCapital = totalCapital/TOTAL_RUNS;
+  long variance = calcVariance(avgResultingCapital, resultingCapitals);
+  long standardDev = (long) sqrt(variance);
+
   cout << "============== INPUT PARAMS ================" << endl;
   cout << "Starting capital: $" << formatWithCommas(STARTING_CAPITAL) << endl;
   cout << "Fixed fractional risk percentage: " << PERCENT_OF_CAPITAL_RISKED_PER_TRADE << "\%" << endl;
   cout << "Win percentage: " << PERCENT_WIN << "\%" << endl;
   cout << "Avg win (in terms of R): " << WIN_AMOUNT << endl;
   cout << "Avg loss (in terms of R): " << LOSS_AMOUNT << endl;
-  cout << "Number of days: " << TOTAL_NUM_DAYS << endl;
-  cout << "Number of trades per day: " << NUM_TRADES_PER_DAY << endl;
+  cout << "Number of days: " << TOTAL_NUM_TRADES << endl;
   cout << "Total number of simulations: " << formatWithCommas(TOTAL_RUNS) << endl;
   cout << "================= RESULTS ===================" << endl;
-  cout << "Average resulting capital: $" << formatWithCommas(totalCapital/TOTAL_RUNS) << endl;
+  cout << "Average resulting capital: $" << formatWithCommas(avgResultingCapital) << endl;
   cout << "Max resulting capital: $" << formatWithCommas(maxResultingCapital) << endl;
   cout << "Min resulting capital: $" << formatWithCommas(minResultingCapital) << endl;
+  cout << "Standard Deviation: " << formatWithCommas(standardDev) << endl;
+  cout << "Coefficient of variation: " << setprecision(2) << ((float) standardDev)/avgResultingCapital << endl;
   cout << "\% accounts <50\% of starting capital: " << float(numAccountsLessThan50PercentOfStartingCapital)/TOTAL_RUNS*100 << "\%" << endl;
   cout << "Number of accounts blown out: " << numAccountsBlownOut << endl;
   cout << "============================================" << endl;
