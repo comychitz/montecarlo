@@ -104,7 +104,7 @@ int main() {
   cout << "Win percentage: " << PERCENT_WIN << "\%" << endl;
   cout << "Avg win (in terms of R): " << WIN_AMOUNT << endl;
   cout << "Avg loss (in terms of R): " << LOSS_AMOUNT << endl;
-  cout << "Number of days: " << TOTAL_NUM_TRADES << endl;
+  cout << "Total number of trades: " << TOTAL_NUM_TRADES << endl;
   cout << "Total number of simulations: " << formatWithCommas(TOTAL_RUNS) << endl;
   cout << "================= RESULTS ===================" << endl;
   cout << "Average resulting capital: $" << formatWithCommas(avgResultingCapital) << endl;
